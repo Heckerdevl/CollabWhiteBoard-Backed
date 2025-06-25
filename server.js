@@ -1,5 +1,4 @@
 require("dotenv").config();
-
 const express = require("express");
 const http = require("http");
 const mongoose = require("mongoose");
@@ -10,13 +9,16 @@ const { addUser, removeUser, getUser, getUsersByRoom } = require("./utils/user")
 const app = express();
 const server = http.createServer(app);
 
+// ✅ Set correct CORS origin for frontend hosted on Vercel
 const io = new Server(server, {
   cors: {
-    origin: "*",
-  },
+    origin: "https://collab-white-board-frontend.vercel.app",
+    methods: ["GET", "POST"],
+    credentials: true
+  }
 });
 
-// Connect to MongoDB
+// ✅ MongoDB connection
 mongoose
   .connect(process.env.MONGO_URI, {
     useNewUrlParser: true,
@@ -28,10 +30,12 @@ mongoose
 const roomElements = {};
 
 app.get("/", (req, res) => {
-  res.send("Realtime Whiteboard Server Running");
+  res.send("✅ Realtime Whiteboard Server is Live");
 });
 
 io.on("connection", (socket) => {
+  console.log("🟢 Socket connected:", socket.id);
+
   socket.on("userJoined", async (data) => {
     const { name, userId, roomId, host, presenter } = data;
     socket.join(roomId);
@@ -45,7 +49,6 @@ io.on("connection", (socket) => {
       socketId: socket.id,
     });
 
-    // Save to MongoDB
     try {
       const existing = await UserModel.findOne({ userId });
       if (!existing) {
@@ -100,5 +103,5 @@ io.on("connection", (socket) => {
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
+  console.log(`🚀 Server running on port ${PORT}`);
 });
